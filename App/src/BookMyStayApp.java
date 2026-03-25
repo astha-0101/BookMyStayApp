@@ -1,120 +1,59 @@
-import java.util.HashMap;
+import java.util.*;
 
-// Abstract Room class
-abstract class Room {
-    private String type;
-    private int beds;
-    private double price;
+// Reservation class (represents booking request)
+class Reservation {
+    String guestName;
+    String roomType;
 
-    public Room(String type, int beds, double price) {
-        this.type = type;
-        this.beds = beds;
-        this.price = price;
+    public Reservation(String guestName, String roomType) {
+        this.guestName = guestName;
+        this.roomType = roomType;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public void displayDetails() {
-        System.out.println("Room Type: " + type);
-        System.out.println("Beds: " + beds);
-        System.out.println("Price: Rs." + price);
+    public void display() {
+        System.out.println("Guest: " + guestName + " | Room Type: " + roomType);
     }
 }
 
-// Concrete room types
-class SingleRoom extends Room {
-    public SingleRoom() {
-        super("Single Room", 1, 1000);
-    }
-}
+// Booking Request Queue (FIFO)
+class BookingQueue {
+    private Queue<Reservation> queue;
 
-class DoubleRoom extends Room {
-    public DoubleRoom() {
-        super("Double Room", 2, 1800);
-    }
-}
-
-class SuiteRoom extends Room {
-    public SuiteRoom() {
-        super("Suite Room", 3, 3000);
-    }
-}
-
-// Inventory management
-class RoomInventory {
-    private HashMap<String, Integer> inventory;
-
-    public RoomInventory() {
-        inventory = new HashMap<>();
+    public BookingQueue() {
+        queue = new LinkedList<>();
     }
 
-    // Register a room type with initial count
-    public void addRoomType(Room room, int count) {
-        inventory.put(room.getType(), count);
+    // Add request (enqueue)
+    public void addRequest(Reservation reservation) {
+        queue.add(reservation);
+        System.out.println("Request added for " + reservation.guestName);
     }
 
-    // Retrieve availability
-    public int getAvailability(String roomType) {
-        return inventory.getOrDefault(roomType, 0);
-    }
+    // View all requests (read-only)
+    public void viewRequests() {
+        System.out.println("\nBooking Requests in Queue (FIFO Order):\n");
 
-    // Update availability (e.g., booking or cancellation)
-    public void updateAvailability(String roomType, int change) {
-        int current = inventory.getOrDefault(roomType, 0);
-        inventory.put(roomType, current + change);
-    }
-
-    // Display all inventory
-    public void displayInventory() {
-        System.out.println("=== Current Room Inventory ===");
-        for (String type : inventory.keySet()) {
-            System.out.println(type + " : " + inventory.get(type) + " rooms available");
+        for (Reservation r : queue) {
+            r.display();
         }
-        System.out.println();
     }
 }
 
-// Main class (Use Case 3)
+// Main class (IMPORTANT)
 public class BookMyStayApp {
     public static void main(String[] args) {
 
-        // Initialize rooms
-        Room single = new SingleRoom();
-        Room doub = new DoubleRoom();
-        Room suite = new SuiteRoom();
+        // Step 1: Create Booking Queue
+        BookingQueue bookingQueue = new BookingQueue();
 
-        // Initialize centralized inventory
-        RoomInventory inventory = new RoomInventory();
-        inventory.addRoomType(single, 5);
-        inventory.addRoomType(doub, 3);
-        inventory.addRoomType(suite, 2);
+        // Step 2: Simulate Guest Requests
+        bookingQueue.addRequest(new Reservation("Aman", "Single"));
+        bookingQueue.addRequest(new Reservation("Riya", "Suite"));
+        bookingQueue.addRequest(new Reservation("Rahul", "Double"));
 
-        // Display room details and inventory
-        System.out.println("===== Welcome to Book My Stay =====\n");
+        // Step 3: View Queue (FIFO order)
+        bookingQueue.viewRequests();
 
-        single.displayDetails();
-        System.out.println();
-
-        doub.displayDetails();
-        System.out.println();
-
-        suite.displayDetails();
-        System.out.println();
-
-        inventory.displayInventory();
-
-        // Example: book a Single Room
-        System.out.println("Booking 1 Single Room...");
-        inventory.updateAvailability("Single Room", -1);
-        inventory.displayInventory();
-
-        // Example: add more Suite Rooms
-        System.out.println("Adding 1 Suite Room...");
-        inventory.updateAvailability("Suite Room", 1);
-        inventory.displayInventory();
-
-        System.out.println("===== Thank You =====");
+        // NOTE: No allocation or inventory update here
     }
 }
