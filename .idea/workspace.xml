@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="eb8c8596-25f2-4151-85a0-eb6b05b3d389" name="Changes" comment="" />
+    <list default="true" id="eb8c8596-25f2-4151-85a0-eb6b05b3d389" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -52,7 +54,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "feature/UC2-BasicRoomTypesStaticAvailability",
+    "git-widget-placeholder": "feature/UC3-CentralizedRoomInventoryManagement",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Admin/Documents/RA2411003012244/BookMyStayApp",
     "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable"
