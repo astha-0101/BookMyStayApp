@@ -69,8 +69,8 @@ class SearchService {
     }
 }
 
-// Main App
-public class UseCase4RoomSearch {
+
+public class BookMyStayApp {
     public static void main(String[] args) {
 
         // Step 1: Create Inventory
@@ -79,7 +79,7 @@ public class UseCase4RoomSearch {
         inventory.addRoom("Double", 0); // unavailable
         inventory.addRoom("Suite", 2);
 
-        // Step 2: Room Data (Domain Model)
+        // Step 2: Room Data
         Map<String, Room> roomData = new HashMap<>();
         roomData.put("Single", new Room("Single", 1500, "WiFi, TV"));
         roomData.put("Double", new Room("Double", 2500, "WiFi, TV, AC"));
