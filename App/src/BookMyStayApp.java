@@ -1,51 +1,78 @@
+import java.io.*;
 import java.util.*;
 
-// Custom Exception
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
-    }
-}
+// Reservation class (Serializable)
+class Reservation implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-// Reservation class
-class Reservation {
-    private String guestName;
-    private String roomType;
+    String reservationId;
+    String guestName;
+    String roomType;
 
-    public Reservation(String guestName, String roomType) {
+    public Reservation(String reservationId, String guestName, String roomType) {
+        this.reservationId = reservationId;
         this.guestName = guestName;
         this.roomType = roomType;
     }
 
-    public void display() {
-        System.out.println("Booking Confirmed for " + guestName + " in " + roomType + " room.");
+    @Override
+    public String toString() {
+        return reservationId + " | " + guestName + " | " + roomType;
     }
 }
 
-// Validator Class
-class InvalidBookingValidator {
+// System State (Inventory + Booking History)
+class SystemState implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    private static final List<String> VALID_ROOM_TYPES =
-            Arrays.asList("Standard", "Deluxe", "Suite");
+    Map<String, Integer> inventory;
+    List<Reservation> bookings;
 
-    // Validate input
-    public static void validate(String guestName, String roomType, int availableRooms)
-            throws InvalidBookingException {
+    public SystemState(Map<String, Integer> inventory, List<Reservation> bookings) {
+        this.inventory = inventory;
+        this.bookings = bookings;
+    }
+}
 
-        // Guest name validation
-        if (guestName == null || guestName.trim().isEmpty()) {
-            throw new InvalidBookingException("Guest name cannot be empty.");
+// Persistence Service
+class PersistenceService {
+
+    private static final String FILE_NAME = "system_state.ser";
+
+    // Save state to file
+    public static void saveState(SystemState state) {
+        try (ObjectOutputStream oos =
+                     new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+
+            oos.writeObject(state);
+            System.out.println("System state saved successfully.");
+
+        } catch (IOException e) {
+            System.out.println("Error saving system state: " + e.getMessage());
+        }
+    }
+
+    // Load state from file
+    public static SystemState loadState() {
+        try (ObjectInputStream ois =
+                     new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+
+            System.out.println("System state loaded successfully.");
+            return (SystemState) ois.readObject();
+
+        } catch (FileNotFoundException e) {
+            System.out.println("No previous data found. Starting fresh.");
+        } catch (Exception e) {
+            System.out.println("Error loading state. Starting with safe defaults.");
         }
 
-        // Room type validation
-        if (!VALID_ROOM_TYPES.contains(roomType)) {
-            throw new InvalidBookingException("Invalid room type selected.");
-        }
+        // Safe default state
+        Map<String, Integer> inventory = new HashMap<>();
+        inventory.put("Standard", 2);
+        inventory.put("Deluxe", 2);
+        inventory.put("Suite", 1);
 
-        // Inventory validation
-        if (availableRooms <= 0) {
-            throw new InvalidBookingException("No rooms available for selected type.");
-        }
+        return new SystemState(inventory, new ArrayList<>());
     }
 }
 
@@ -54,44 +81,33 @@ public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        Scanner sc = new Scanner(System.in);
+        // Step 1: Load previous state
+        SystemState state = PersistenceService.loadState();
 
-        // Simulated inventory
-        Map<String, Integer> inventory = new HashMap<>();
-        inventory.put("Standard", 2);
-        inventory.put("Deluxe", 1);
-        inventory.put("Suite", 0);
+        Map<String, Integer> inventory = state.inventory;
+        List<Reservation> bookings = state.bookings;
 
-        try {
-            // User input
-            System.out.print("Enter Guest Name: ");
-            String guestName = sc.nextLine();
+        // Display recovered state
+        System.out.println("\nRecovered Inventory: " + inventory);
+        System.out.println("Recovered Bookings: " + bookings);
 
-            System.out.print("Enter Room Type (Standard/Deluxe/Suite): ");
-            String roomType = sc.nextLine();
+        // Step 2: Simulate new booking
+        Reservation newBooking = new Reservation("RES" + (bookings.size() + 1),
+                "Astha", "Deluxe");
 
-            // Get available rooms
-            int availableRooms = inventory.getOrDefault(roomType, 0);
+        bookings.add(newBooking);
 
-            // Validate (Fail-Fast)
-            InvalidBookingValidator.validate(guestName, roomType, availableRooms);
-
-            // Proceed only if valid
-            Reservation reservation = new Reservation(guestName, roomType);
-            reservation.display();
-
-            // Update inventory safely
-            inventory.put(roomType, availableRooms - 1);
-
-        } catch (InvalidBookingException e) {
-            // Graceful error handling
-            System.out.println("Booking Failed: " + e.getMessage());
-        } catch (Exception e) {
-            // Unexpected errors
-            System.out.println("Unexpected Error: " + e.getMessage());
+        // Update inventory safely
+        if (inventory.get("Deluxe") > 0) {
+            inventory.put("Deluxe", inventory.get("Deluxe") - 1);
+            System.out.println("\nNew Booking Added: " + newBooking);
+        } else {
+            System.out.println("\nNo Deluxe rooms available.");
         }
 
-        // System continues running
-        System.out.println("System is still running safely.");
+        // Step 3: Save updated state
+        PersistenceService.saveState(new SystemState(inventory, bookings));
+
+        System.out.println("\nSystem shutting down safely...");
     }
 }
