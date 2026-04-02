@@ -1,59 +1,105 @@
 import java.util.*;
 
-// Reservation class (represents booking request)
+// Reservation class (represents confirmed booking)
 class Reservation {
-    String guestName;
-    String roomType;
+    private String reservationId;
+    private String guestName;
+    private String roomType;
+    private double totalCost;
 
-    public Reservation(String guestName, String roomType) {
+    public Reservation(String reservationId, String guestName, String roomType, double totalCost) {
+        this.reservationId = reservationId;
         this.guestName = guestName;
         this.roomType = roomType;
+        this.totalCost = totalCost;
     }
 
-    public void display() {
-        System.out.println("Guest: " + guestName + " | Room Type: " + roomType);
+    public String getReservationId() {
+        return reservationId;
+    }
+
+    public String getGuestName() {
+        return guestName;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public double getTotalCost() {
+        return totalCost;
+    }
+
+    @Override
+    public String toString() {
+        return "Reservation ID: " + reservationId +
+                ", Guest: " + guestName +
+                ", Room: " + roomType +
+                ", Cost: ₹" + totalCost;
     }
 }
 
-// Booking Request Queue (FIFO)
-class BookingQueue {
-    private Queue<Reservation> queue;
+// Booking History (stores confirmed reservations)
+class BookingHistory {
 
-    public BookingQueue() {
-        queue = new LinkedList<>();
+    // List maintains insertion order
+    private List<Reservation> reservations = new ArrayList<>();
+
+    // Add confirmed reservation
+    public void addReservation(Reservation reservation) {
+        reservations.add(reservation);
     }
 
-    // Add request (enqueue)
-    public void addRequest(Reservation reservation) {
-        queue.add(reservation);
-        System.out.println("Request added for " + reservation.guestName);
+    // Retrieve all reservations
+    public List<Reservation> getAllReservations() {
+        return reservations;
     }
+}
 
-    // View all requests (read-only)
-    public void viewRequests() {
-        System.out.println("\nBooking Requests in Queue (FIFO Order):\n");
+// Reporting Service
+class BookingReportService {
 
-        for (Reservation r : queue) {
-            r.display();
+    // Display all bookings
+    public void displayAllBookings(List<Reservation> reservations) {
+        System.out.println("\n--- Booking History ---");
+        for (Reservation r : reservations) {
+            System.out.println(r);
         }
     }
+
+    // Generate summary report
+    public void generateSummary(List<Reservation> reservations) {
+        int totalBookings = reservations.size();
+        double totalRevenue = 0;
+
+        for (Reservation r : reservations) {
+            totalRevenue += r.getTotalCost();
+        }
+
+        System.out.println("\n--- Booking Summary Report ---");
+        System.out.println("Total Bookings: " + totalBookings);
+        System.out.println("Total Revenue: ₹" + totalRevenue);
+    }
 }
 
-// Main class (IMPORTANT)
+// Main Class
+
 public class BookMyStayApp {
+
     public static void main(String[] args) {
 
-        // Step 1: Create Booking Queue
-        BookingQueue bookingQueue = new BookingQueue();
+        BookingHistory history = new BookingHistory();
+        BookingReportService reportService = new BookingReportService();
 
-        // Step 2: Simulate Guest Requests
-        bookingQueue.addRequest(new Reservation("Aman", "Single"));
-        bookingQueue.addRequest(new Reservation("Riya", "Suite"));
-        bookingQueue.addRequest(new Reservation("Rahul", "Double"));
+        // Simulating confirmed bookings
+        history.addReservation(new Reservation("RES101", "Astha", "Deluxe", 5000));
+        history.addReservation(new Reservation("RES102", "Rahul", "Suite", 8000));
+        history.addReservation(new Reservation("RES103", "Neha", "Standard", 3000));
 
-        // Step 3: View Queue (FIFO order)
-        bookingQueue.viewRequests();
+        // Admin views booking history
+        reportService.displayAllBookings(history.getAllReservations());
 
-        // NOTE: No allocation or inventory update here
+        // Admin generates report
+        reportService.generateSummary(history.getAllReservations());
     }
 }
