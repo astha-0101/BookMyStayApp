@@ -1,50 +1,95 @@
 import java.util.*;
 
-// Custom Exception
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
-    }
-}
-
 // Reservation class
 class Reservation {
-    private String guestName;
-    private String roomType;
+    String guestName;
+    String roomType;
 
     public Reservation(String guestName, String roomType) {
         this.guestName = guestName;
         this.roomType = roomType;
     }
+}
 
-    public void display() {
-        System.out.println("Booking Confirmed for " + guestName + " in " + roomType + " room.");
+// Shared Booking Queue
+class BookingQueue {
+    private Queue<Reservation> queue = new LinkedList<>();
+
+    // synchronized add
+    public synchronized void addRequest(Reservation r) {
+        queue.add(r);
+        System.out.println("Request Added: " + r.guestName);
+    }
+
+    // synchronized remove
+    public synchronized Reservation getRequest() {
+        return queue.poll();
     }
 }
 
-// Validator Class
-class InvalidBookingValidator {
+// Shared Inventory (Critical Section)
+class Inventory {
+    private Map<String, Integer> rooms = new HashMap<>();
 
-    private static final List<String> VALID_ROOM_TYPES =
-            Arrays.asList("Standard", "Deluxe", "Suite");
+    public Inventory() {
+        rooms.put("Standard", 1);
+        rooms.put("Deluxe", 1);
+        rooms.put("Suite", 1);
+    }
 
-    // Validate input
-    public static void validate(String guestName, String roomType, int availableRooms)
-            throws InvalidBookingException {
+    // synchronized allocation (critical section)
+    public synchronized boolean allocateRoom(String roomType, String guestName) {
+        int available = rooms.getOrDefault(roomType, 0);
 
-        // Guest name validation
-        if (guestName == null || guestName.trim().isEmpty()) {
-            throw new InvalidBookingException("Guest name cannot be empty.");
+        if (available > 0) {
+            System.out.println(Thread.currentThread().getName() +
+                    " allocated " + roomType + " room to " + guestName);
+            rooms.put(roomType, available - 1);
+            return true;
+        } else {
+            System.out.println(Thread.currentThread().getName() +
+                    " FAILED for " + guestName + " (No " + roomType + " rooms)");
+            return false;
         }
+    }
 
-        // Room type validation
-        if (!VALID_ROOM_TYPES.contains(roomType)) {
-            throw new InvalidBookingException("Invalid room type selected.");
-        }
+    public void displayInventory() {
+        System.out.println("\nFinal Inventory: " + rooms);
+    }
+}
 
-        // Inventory validation
-        if (availableRooms <= 0) {
-            throw new InvalidBookingException("No rooms available for selected type.");
+// Worker Thread (Concurrent Booking Processor)
+class BookingProcessor extends Thread {
+
+    private BookingQueue queue;
+    private Inventory inventory;
+
+    public BookingProcessor(String name, BookingQueue queue, Inventory inventory) {
+        super(name);
+        this.queue = queue;
+        this.inventory = inventory;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            Reservation r;
+
+            // synchronized queue access
+            synchronized (queue) {
+                r = queue.getRequest();
+            }
+
+            if (r == null) break;
+
+            // critical section
+            inventory.allocateRoom(r.roomType, r.guestName);
+
+            try {
+                Thread.sleep(100); // simulate processing delay
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
@@ -54,44 +99,36 @@ public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        Scanner sc = new Scanner(System.in);
+        BookingQueue queue = new BookingQueue();
+        Inventory inventory = new Inventory();
 
-        // Simulated inventory
-        Map<String, Integer> inventory = new HashMap<>();
-        inventory.put("Standard", 2);
-        inventory.put("Deluxe", 1);
-        inventory.put("Suite", 0);
+        // Simulate multiple guest requests
+        queue.addRequest(new Reservation("Astha", "Deluxe"));
+        queue.addRequest(new Reservation("Rahul", "Deluxe"));
+        queue.addRequest(new Reservation("Neha", "Standard"));
+        queue.addRequest(new Reservation("Amit", "Standard"));
+        queue.addRequest(new Reservation("Sara", "Suite"));
 
+        // Create multiple threads
+        BookingProcessor t1 = new BookingProcessor("Thread-1", queue, inventory);
+        BookingProcessor t2 = new BookingProcessor("Thread-2", queue, inventory);
+        BookingProcessor t3 = new BookingProcessor("Thread-3", queue, inventory);
+
+        // Start threads
+        t1.start();
+        t2.start();
+        t3.start();
+
+        // Wait for completion
         try {
-            // User input
-            System.out.print("Enter Guest Name: ");
-            String guestName = sc.nextLine();
-
-            System.out.print("Enter Room Type (Standard/Deluxe/Suite): ");
-            String roomType = sc.nextLine();
-
-            // Get available rooms
-            int availableRooms = inventory.getOrDefault(roomType, 0);
-
-            // Validate (Fail-Fast)
-            InvalidBookingValidator.validate(guestName, roomType, availableRooms);
-
-            // Proceed only if valid
-            Reservation reservation = new Reservation(guestName, roomType);
-            reservation.display();
-
-            // Update inventory safely
-            inventory.put(roomType, availableRooms - 1);
-
-        } catch (InvalidBookingException e) {
-            // Graceful error handling
-            System.out.println("Booking Failed: " + e.getMessage());
-        } catch (Exception e) {
-            // Unexpected errors
-            System.out.println("Unexpected Error: " + e.getMessage());
+            t1.join();
+            t2.join();
+            t3.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
-        // System continues running
-        System.out.println("System is still running safely.");
+        // Final state
+        inventory.displayInventory();
     }
 }
